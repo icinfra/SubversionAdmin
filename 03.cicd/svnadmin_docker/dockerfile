@@ -19,14 +19,14 @@ RUN ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
     && echo 'export LANG="C.UTF-8"' >> /etc/profile \
     && echo 'export LC_ALL="C.UTF-8"' >> /etc/profile\
     && curl -o /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-7.repo \
-    && echo -e "[WandiscoSVN]\nname=Wandisco SVN Repo\nbaseurl=http://opensource.wandisco.com/centos/7/svn-${svn_version}/RPMS/x86_64/\nenabled=1\ngpgcheck=0" >/etc/yum.repos.d/wandisco-svn.repo \
+    && echo -e "[WandiscoSVN]\nname=Wandisco SVN Repo\nbaseurl=https://opensource.wandisco.com/centos/7/svn-1.10/RPMS/x86_64/\nenabled=1\ngpgcheck=0" >/etc/yum.repos.d/wandisco-svn.repo \
     && yum clean all \
     && yum makecache \
     && yum install -y epel-release yum-utils \
     && rpm -Uvh https://mirrors.aliyun.com/remi/enterprise/remi-release-7.rpm \
     && yum-config-manager --enable remi-${php_version} \
-    && yum install -y php php-common php-cli php-fpm php-json php-mysqlnd php-mysql php-pdo php-process php-json php-gd php-bcmath php-ldap php-mbstring\
-    && yum install -y httpd mod_dav_svn mod_ldap mod_php subversion subversion-tools \
+    && yum install -y php php-common php-cli php-fpm php-json php-mysqlnd php-pdo php-process php-json php-gd php-bcmath php-ldap php-mbstring\
+    && yum install -y httpd mod_dav_svn mod_ldap mod_php mod_ssl subversion subversion-tools \
     && yum install -y cyrus-sasl cyrus-sasl-lib cyrus-sasl-plain \
     && yum install -y which \
     && yum install -y cronie at \
