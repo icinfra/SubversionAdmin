@@ -1,0 +1,17 @@
+# 忽略SSL证书文件（安全考虑）
+ssl/*.key
+ssl/*.crt
+ssl/*.pem
+
+# 忽略日志文件
+logs/*.log
+
+# 忽略临时文件
+*.tmp
+*.temp
+
+# 忽略编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo

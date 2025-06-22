@@ -1,0 +1,47 @@
+version: "3.7"
+
+services:  # SVN Admin 服务
+  svnadmin:
+    image: registry.cn-hangzhou.aliyuncs.com/witersencom/svnadmin:2.5.10
+    container_name: svnadmin
+    restart: unless-stopped
+    # 只暴露内部端口，不直接对外
+    expose:
+      - "80"
+      - "3690"
+    volumes:
+      # 将宿主机 /data/svn/svnadmin 挂载到容器的 /home/svnadmin
+      - /data/svn/svnadmin:/home/svnadmin:Z
+      # 将宿主机 /data/svn/conf.d 挂载到容器的 /etc/httpd/conf.d
+      - /data/svn/conf.d:/etc/httpd/conf.d:Z
+      # 将宿主机 /data/svn/sasl2 挂载到容器的 /etc/sasl2
+      - /data/svn/sasl2:/etc/sasl2:Z      # 修复Apache ServerName警告 - 使用Z标签修复SELinux权限
+      - ./apache-servername.conf:/etc/httpd/conf.d/00-servername.conf:ro,Z
+    environment:
+      - APACHE_SERVER_NAME=svn.lab.icinfra.ltd
+    networks:
+      - svn-network
+  # Nginx HTTPS 代理
+  nginx:
+    image: nginx:alpine
+    container_name: svn-nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "3690:3690"  # SVN协议端口直接透传
+    volumes:
+      # Nginx 配置文件
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro,Z
+      # SSL 证书目录
+      - ./ssl:/etc/nginx/ssl:ro,Z
+    depends_on:
+      - svnadmin
+    networks:
+      - svn-network
+    # 简化启动命令，让nginx管理自己的日志
+    command: nginx -g 'daemon off;'
+
+networks:
+  svn-network:
+    driver: bridge
