@@ -49,29 +49,32 @@ podman-compose up -d
 
 ### 4. 访问服务
 
-- HTTPS: https://svn.lab.icinfra.ltd
-- HTTP: http://svn.lab.icinfra.ltd (自动重定向到HTTPS)
+- HTTPS: https://svn.lab.icinfra.ltd (仅HTTPS，443端口)
 - SVN协议: svn://svn.lab.icinfra.ltd:3690
+
+⚠️ **注意**: 此配置只开放443端口，不支持HTTP访问，增强安全性。
 
 ## 架构说明
 
-1. **Nginx** 作为反向代理，处理HTTPS请求并转发到后端SVN Admin服务
+1. **Nginx** 作为HTTPS反向代理，只监听443端口并转发到后端SVN Admin服务
 2. **SVN Admin** 运行在内部网络中，只通过Nginx暴露
 3. **SSL终止** 在Nginx层完成，后端通信使用HTTP
+4. **安全增强** 不开放80端口，只允许HTTPS访问
 4. **SVN协议** 直接透传，不经过Nginx代理
 
 ## 安全特性
 
-- 强制HTTPS重定向
+- 只开放HTTPS端口（443），不提供HTTP访问
 - 现代SSL/TLS配置
 - 安全头设置
 - 自签名证书支持
+- 内部网络隔离
 
 ## 注意事项
 
 1. 自签名证书会在浏览器中显示安全警告
 2. 生产环境建议使用CA签发的证书
-3. 确保防火墙允许80、443和3690端口
+3. 确保防火墙允许443和3690端口（不需要80端口）
 4. SVN Admin数据目录需要正确挂载
 
 ## 故障排除

@@ -86,11 +86,12 @@ fi
 # 6. 配置防火墙
 echo "6. 配置防火墙..."
 if systemctl is-active --quiet firewalld; then
-    sudo firewall-cmd --permanent --add-port=80/tcp 2>/dev/null || true
     sudo firewall-cmd --permanent --add-port=443/tcp 2>/dev/null || true
     sudo firewall-cmd --permanent --add-port=3690/tcp 2>/dev/null || true
+    # 移除HTTP端口（如果之前添加过）
+    sudo firewall-cmd --permanent --remove-port=80/tcp 2>/dev/null || true
     sudo firewall-cmd --reload 2>/dev/null || true
-    echo "防火墙端口已开放"
+    echo "防火墙端口已配置 (443, 3690)"
 fi
 
 # 7. 停止冲突服务
@@ -118,9 +119,10 @@ echo ""
 echo "✅ 部署完成！"
 echo ""
 echo "📋 访问信息:"
-echo "  🌐 HTTPS Web: https://$DOMAIN"
-echo "  🌐 HTTP Web:  http://$DOMAIN (自动重定向)"
+echo "  🌐 HTTPS Web: https://$DOMAIN (仅HTTPS访问)"
 echo "  📦 SVN 协议:  svn://$DOMAIN:3690"
+echo ""
+echo "⚠️  注意: 只开放了443端口，不支持HTTP访问"
 echo ""
 echo "📝 查看日志:"
 echo "  $COMPOSE_CMD logs -f"
@@ -131,15 +133,11 @@ echo "  $COMPOSE_CMD logs nginx"
 echo ""
 
 # 12. 简单测试
-echo "12. 测试连接..."
-if curl -s -o /dev/null -w "%{http_code}" http://localhost | grep -q "30[12]"; then
-    echo "✅ HTTP 重定向正常"
-else
-    echo "⚠️  HTTP 测试失败，请检查日志"
-fi
-
+echo "12. 测试HTTPS连接..."
 if curl -s -k -o /dev/null -w "%{http_code}" https://localhost | grep -q "200"; then
     echo "✅ HTTPS 连接正常"
 else
     echo "⚠️  HTTPS 测试失败，请检查日志"
 fi
+
+echo "⚠️  注意: HTTP端口已关闭，只能通过HTTPS访问"
