@@ -72,15 +72,79 @@ fi
 echo "5. 检查SSL证书..."
 if [ ! -f "$SCRIPT_DIR/ssl/$DOMAIN.crt" ] || [ ! -f "$SCRIPT_DIR/ssl/$DOMAIN.key" ]; then
     echo "生成SSL证书..."
-    if [ -f "$SCRIPT_DIR/generate-ssl-cert.sh" ]; then
+    
+    # 清理可能存在的部分文件
+    rm -f "$SCRIPT_DIR/ssl/$DOMAIN.crt" "$SCRIPT_DIR/ssl/$DOMAIN.key" "$SCRIPT_DIR/ssl/$DOMAIN.csr" "$SCRIPT_DIR/ssl/$DOMAIN.conf" 2>/dev/null || true
+    pkill -f "openssl dhparam" 2>/dev/null || true
+    
+    # 尝试多个证书生成脚本，按优先级顺序
+    SUCCESS=false
+    
+    # 1. 尝试基础版本（最兼容）
+    if [ -f "$SCRIPT_DIR/generate-ssl-basic.sh" ]; then
+        echo "尝试基础版证书生成器..."
+        chmod +x "$SCRIPT_DIR/generate-ssl-basic.sh"
+        if "$SCRIPT_DIR/generate-ssl-basic.sh" "$DOMAIN" 2>/dev/null; then
+            SUCCESS=true
+            echo "✅ 基础证书生成成功"
+        else
+            echo "⚠️  基础版本失败"
+            rm -f "$SCRIPT_DIR/ssl/$DOMAIN.crt" "$SCRIPT_DIR/ssl/$DOMAIN.key" 2>/dev/null || true
+        fi
+    fi
+    
+    # 2. 尝试简化版本
+    if [ "$SUCCESS" = false ] && [ -f "$SCRIPT_DIR/generate-ssl-simple.sh" ]; then
+        echo "尝试简化版证书生成器..."
+        chmod +x "$SCRIPT_DIR/generate-ssl-simple.sh"
+        if "$SCRIPT_DIR/generate-ssl-simple.sh" "$DOMAIN" 2>/dev/null; then
+            SUCCESS=true
+            echo "✅ 简化证书生成成功"
+        else
+            echo "⚠️  简化版本失败"
+            rm -f "$SCRIPT_DIR/ssl/$DOMAIN.crt" "$SCRIPT_DIR/ssl/$DOMAIN.key" 2>/dev/null || true
+        fi
+    fi
+    
+    # 3. 尝试标准版本
+    if [ "$SUCCESS" = false ] && [ -f "$SCRIPT_DIR/generate-ssl-cert.sh" ]; then
+        echo "尝试标准版证书生成器..."
         chmod +x "$SCRIPT_DIR/generate-ssl-cert.sh"
-        "$SCRIPT_DIR/generate-ssl-cert.sh" "$DOMAIN"
-    else
-        echo "❌ 错误: generate-ssl-cert.sh 脚本不存在"
+        if "$SCRIPT_DIR/generate-ssl-cert.sh" "$DOMAIN" 2>/dev/null; then
+            SUCCESS=true
+            echo "✅ 标准证书生成成功"
+        else
+            echo "⚠️  标准版本失败"
+            rm -f "$SCRIPT_DIR/ssl/$DOMAIN.crt" "$SCRIPT_DIR/ssl/$DOMAIN.key" 2>/dev/null || true
+        fi
+    fi
+    
+    # 4. 最后尝试Chrome兼容版本（可能有问题但保留选项）
+    if [ "$SUCCESS" = false ] && [ -f "$SCRIPT_DIR/generate-ssl-cert-chrome.sh" ]; then
+        echo "尝试Chrome兼容版证书生成器..."
+        chmod +x "$SCRIPT_DIR/generate-ssl-cert-chrome.sh"
+        if "$SCRIPT_DIR/generate-ssl-cert-chrome.sh" "$DOMAIN" 2>/dev/null; then
+            SUCCESS=true
+            echo "✅ Chrome兼容证书生成成功"
+        else
+            echo "⚠️  Chrome兼容版本失败"
+            rm -f "$SCRIPT_DIR/ssl/$DOMAIN.crt" "$SCRIPT_DIR/ssl/$DOMAIN.key" 2>/dev/null || true
+        fi
+    fi
+    
+    if [ "$SUCCESS" = false ]; then
+        echo "❌ 错误: 所有证书生成方法都失败了"
+        echo "请检查 openssl 是否正确安装"
         exit 1
     fi
 else
     echo "SSL证书已存在"
+    # 验证证书兼容性
+    if [ -f "$SCRIPT_DIR/ssl-troubleshoot.sh" ]; then
+        chmod +x "$SCRIPT_DIR/ssl-troubleshoot.sh"
+        echo "验证证书兼容性..."
+        "$SCRIPT_DIR/ssl-troubleshoot.sh" "$DOMAIN" 2>/dev/null | grep -E "(✅|❌|⚠️)" || true
+    fi
 fi
 
 # 6. 配置防火墙

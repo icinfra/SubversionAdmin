@@ -35,7 +35,8 @@ echo OU=IT Department
 echo CN=%DOMAIN%
 echo.
 echo [v3_req]
-echo keyUsage = keyEncipherment, dataEncipherment
+echo basicConstraints = CA:FALSE
+echo keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 echo extendedKeyUsage = serverAuth
 echo subjectAltName = @alt_names
 echo.

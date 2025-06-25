@@ -14,7 +14,13 @@
 
 ### 1. 生成SSL证书
 
-**Linux/Mac:**
+**Chrome兼容版本（推荐）:**
+```bash
+chmod +x generate-ssl-cert-chrome.sh
+./generate-ssl-cert-chrome.sh svn.lab.icinfra.ltd
+```
+
+**标准版本:**
 ```bash
 chmod +x generate-ssl-cert.sh
 ./generate-ssl-cert.sh svn.lab.icinfra.ltd
@@ -22,7 +28,7 @@ chmod +x generate-ssl-cert.sh
 
 **Windows:**
 ```cmd
-generate-ssl-cert.bat svn.lab.icinfra.ltd
+generate-ssl-cert-chrome.bat svn.lab.icinfra.ltd
 ```
 
 这将在 `ssl/` 目录下生成以下文件：
@@ -97,14 +103,29 @@ chmod +x fix-permissions.sh
 ./fix-permissions.sh
 ```
 
-**3. CentOS 7.9 特殊设置**
-```bash
-# 设置SELinux上下文
-sudo chcon -Rt container_file_t logs/ ssl/ nginx.conf apache-servername.conf
+### Chrome ERR_SSL_KEY_USAGE_INCOMPATIBLE 错误
 
-# 或者临时禁用SELinux
-sudo setenforce 0
+如果Chrome显示此错误，请使用Chrome兼容的证书生成器：
+
+```bash
+# 删除旧证书
+rm -f ssl/*.crt ssl/*.key
+
+# 生成Chrome兼容证书
+./generate-ssl-cert-chrome.sh svn.lab.icinfra.ltd
+
+# 重启服务
+docker-compose restart
+
+# 故障排除
+./ssl-troubleshoot.sh svn.lab.icinfra.ltd
 ```
+
+**在Chrome中信任证书:**
+1. 打开 `chrome://settings/certificates`
+2. 管理证书 → 受信任的根证书颁发机构
+3. 导入 `ssl/svn.lab.icinfra.ltd.crt`
+4. 重启Chrome
 
 ### 诊断命令
 
